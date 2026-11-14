@@ -1,5 +1,6 @@
 #include "Storage.h"
 
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -7,6 +8,38 @@
 #include <unordered_set>
 
 namespace {
+
+bool validateStudentsForSave(const std::vector<Student>& students, std::string& errorMessage) {
+    std::unordered_set<int> studentIds;
+
+    for (const Student& student : students) {
+        if (student.id <= 0) {
+            errorMessage = "Cannot save a record with a non-positive student ID.";
+            return false;
+        }
+        if (!studentIds.insert(student.id).second) {
+            errorMessage = "Cannot save duplicate student ID " + std::to_string(student.id) + ".";
+            return false;
+        }
+        if (student.name.empty()) {
+            errorMessage = "Cannot save student ID " + std::to_string(student.id) + " without a name.";
+            return false;
+        }
+        if (student.name.find_first_of("\r\n") != std::string::npos) {
+            errorMessage = "Cannot save a student name containing a line break.";
+            return false;
+        }
+        for (const double grade : student.grades) {
+            if (!std::isfinite(grade) || grade < 0.0 || grade > 100.0) {
+                errorMessage = "Cannot save an invalid grade for student ID " +
+                               std::to_string(student.id) + ".";
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
 
 std::string escapeCsv(const std::string& value) {
     if (value.find_first_of(",\"") == std::string::npos) {
@@ -80,8 +113,13 @@ bool parseGradeStrictly(const std::string& text, double& value) {
 bool saveStudents(const std::vector<Student>& students,
                   const std::string& filename,
                   std::string& errorMessage) {
+    if (!validateStudentsForSave(students, errorMessage)) {
+        return false;
+    }
+
     const std::filesystem::path destination(filename);
     const std::filesystem::path temporaryFile = destination.string() + ".tmp";
+    const std::filesystem::path backupFile = destination.string() + ".bak";
 
     std::ofstream output(temporaryFile);
     if (!output) {
@@ -107,15 +145,43 @@ bool saveStudents(const std::vector<Student>& students,
         return false;
     }
 
+    const bool destinationExists = std::filesystem::exists(destination);
     std::error_code fileError;
-    std::filesystem::remove(destination, fileError);
-    fileError.clear();
+    if (destinationExists) {
+        std::filesystem::remove(backupFile, fileError);
+        if (fileError) {
+            errorMessage = "Could not remove an old backup file: " + fileError.message();
+            std::error_code ignored;
+            std::filesystem::remove(temporaryFile, ignored);
+            return false;
+        }
+
+        std::filesystem::rename(destination, backupFile, fileError);
+        if (fileError) {
+            errorMessage = "Could not create a backup of the existing data: " + fileError.message();
+            std::error_code ignored;
+            std::filesystem::remove(temporaryFile, ignored);
+            return false;
+        }
+    }
+
     std::filesystem::rename(temporaryFile, destination, fileError);
     if (fileError) {
         errorMessage = "Could not replace the data file: " + fileError.message();
         std::error_code ignored;
         std::filesystem::remove(temporaryFile, ignored);
+        if (destinationExists) {
+            std::filesystem::rename(backupFile, destination, ignored);
+            if (ignored) {
+                errorMessage += " The backup remains at " + backupFile.string() + ".";
+            }
+        }
         return false;
+    }
+
+    if (destinationExists) {
+        std::error_code ignored;
+        std::filesystem::remove(backupFile, ignored);
     }
 
     errorMessage.clear();
