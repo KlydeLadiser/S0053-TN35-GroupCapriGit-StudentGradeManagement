@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(student_core
     src/Student.cpp
     src/Storage.cpp
+    src/InputValidation.cpp
 )
 target_include_directories(student_core PUBLIC include)
 
