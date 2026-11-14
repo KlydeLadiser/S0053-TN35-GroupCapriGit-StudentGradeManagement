@@ -1,0 +1,9 @@
+/build/
+*.exe
+*.o
+*.obj
+*.tmp
+*.bak
+students.csv
+storage_test.csv
+.vscode/
