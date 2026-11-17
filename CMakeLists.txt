@@ -12,7 +12,10 @@ add_library(student_core
 )
 target_include_directories(student_core PUBLIC include)
 
-add_executable(student_grade_manager src/main.cpp)
+add_executable(student_grade_manager
+    src/main.cpp
+    src/GradeBook.cpp
+)
 target_link_libraries(student_grade_manager PRIVATE student_core)
 
 add_executable(storage_tests tests/storage_tests.cpp)

@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "GradeBook.h"
 #include "InputValidation.h"
-#include "Student.h"
 
 // Grading rules
 
