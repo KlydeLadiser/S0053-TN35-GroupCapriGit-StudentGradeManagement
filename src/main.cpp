@@ -9,6 +9,11 @@
 #include <string>
 #include <vector>
 
+void updateStudentRecord(std::vector<Student>& students);
+void deleteStudentRecord(std::vector<Student>& students);
+void showClassSummary(const std::vector<Student>& students);
+void showRanking(const std::vector<Student>& students);
+
 namespace {
 
 const std::string DATA_FILE = "students.csv";
@@ -89,8 +94,12 @@ void showMenu() {
               << "1. Add student\n"
               << "2. View all students\n"
               << "3. Search by student ID\n"
-              << "4. Save records\n"
-              << "5. Exit\n";
+              << "4. Update student\n"
+              << "5. Delete student\n"
+              << "6. Class summary\n"
+              << "7. Student ranking\n"
+              << "8. Save records\n"
+              << "9. Exit\n";
 }
 
 }  // namespace
@@ -109,7 +118,7 @@ int main() {
     try {
         while (true) {
             showMenu();
-            const int choice = readInt("Choose an option: ", 1, 5);
+            const int choice = readInt("Choose an option: ", 1, 9);
             switch (choice) {
                 case 1:
                     addStudent(students);
@@ -121,9 +130,21 @@ int main() {
                     searchStudent(students);
                     break;
                 case 4:
-                    saveChanges(students);
+                    updateStudentRecord(students);
                     break;
                 case 5:
+                    deleteStudentRecord(students);
+                    break;
+                case 6:
+                    showClassSummary(students);
+                    break;
+                case 7:
+                    showRanking(students);
+                    break;
+                case 8:
+                    saveChanges(students);
+                    break;
+                case 9:
                     if (saveChanges(students)) {
                         std::cout << "Goodbye.\n";
                         return 0;
